@@ -29,8 +29,8 @@ train_validate_size = 10000
 testing_size = 2000
 m_s_severe = 25.7222
 
-num_trees_list = [1, 5, 10, 50, 100]
-max_depth_list = [1, 5, 10, 20, 50]
+num_trees_list = [1, 2, 3, 5, 10]
+max_depth_list = [1, 2, 3, 5, 10]
 
 def load_data():
     df = pd.read_csv(datafile, header=0)
@@ -246,6 +246,7 @@ def gb_regressor(df):
     print(valid_rmse)
     print("\n")
 
+
 def grid_search_forest(df):
     global num_trees_list, max_depth_list
     y_col = 'severe_wind'
@@ -315,6 +316,12 @@ def grid_search_forest(df):
     plt.ylabel("Num trees")
     plt.colorbar(contour_plot).set_label("Brier Skill Score")
 
+    min_test_bs = min(test_bs_dict.values())
+    max_test_bss = max(test_bss_dict.values())
+    print("Best test bs")
+    print(min_test_bs)
+    print("Best test bss")
+    print(max_test_bss)
 
 def random_split(df, ratio):
     ### Split the dataset into training and validation
