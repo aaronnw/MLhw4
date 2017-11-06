@@ -2,6 +2,7 @@ import pandas as pd
 import random
 from sklearn.preprocessing import Imputer
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import brier_score_loss
 
 datafile = "hw4data.csv"
 
@@ -42,22 +43,36 @@ def split_input_data(df):
 
 def decision_tree(tv_set, test_set):
     training_set, validation_set = random_split(tv_set, .75)
-    d_tree = DecisionTreeClassifier()
+    d_tree = DecisionTreeClassifier(criterion="entropy")
     fitted_tree = d_tree.fit(training_set[x_col], training_set[y_col])
+    # Frequency of severe wind for BSS calc
+    counts = training_set[y_col].value_counts().to_dict()
+    freq_pos = counts[1] / (counts[0] + counts[1])
 
-    #Validation BS
+
+    # Validation stuff
+    y_true = validation_set[y_col]
+    y_pred = fitted_tree.predict_proba(validation_set[x_col])[:, 1]
+    # Validation BS
     print("Validation BS")
-    print(len(validation_set[x_col]))
-    y_probs = fitted_tree.predict_proba(validation_set[x_col])
-    print(y_probs)
-    #Validation BSS
+    valid_bs = brier_score_loss(y_true, y_pred)
+    print(valid_bs)
+    # Validation BSS
+    print("Validation BSS")
+    valid_bss = calc_BSS(y_true, y_pred, freq_pos)
+    print(valid_bss)
 
-    #Test BS
-    #Test BSS
-
-    print(training_set.shape)
-    print(validation_set.shape)
-
+    # Test stuff
+    y_true = test_set[y_col]
+    y_pred = fitted_tree.predict_proba(test_set[x_col])[:, 1]
+    # Test BS
+    print("Test BS")
+    test_bs = brier_score_loss(y_true, y_pred)
+    print(test_bs)
+    # Test BSS
+    print("Test BSS")
+    test_bss = calc_BSS(y_true, y_pred, freq_pos)
+    print(test_bss)
 
 
 def random_split(df, ratio):
@@ -73,6 +88,13 @@ def split_dataframe(df, index_list):
     pulled_df = df.take(index_list)
     source_df = df.drop(df.index[index_list],inplace = False)
     return pulled_df, source_df
+
+def calc_BSS(y_true, y_pred, freq_pos):
+    bs = brier_score_loss(y_true, y_pred)
+    freq_series = pd.Series([freq_pos for i in range(len(y_pred))])
+    bs_pos_class = brier_score_loss(y_true, freq_series)
+    return (bs_pos_class - bs)/bs_pos_class
+
 
 if __name__ == "__main__":
     load_data()
