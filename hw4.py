@@ -29,8 +29,8 @@ train_validate_size = 10000
 testing_size = 2000
 m_s_severe = 25.7222
 
-num_trees_list = [1, 2, 3, 5, 10]
-max_depth_list = [1, 2, 3, 5, 10]
+num_trees_list = [1, 5, 10, 50, 100]
+max_depth_list = [1, 3, 5, 10, 20]
 
 def load_data():
     df = pd.read_csv(datafile, header=0)
@@ -260,7 +260,6 @@ def grid_search_forest(df):
         num_trees = m[0]
         max_depth = m[1]
         for i in range(30):
-            print(m)
             training_set, validation_set = random_split(tv_set, .75)
             forest = RandomForestClassifier(criterion="entropy", n_estimators=num_trees)
             forest.fit(training_set[x_col], training_set[y_col])
@@ -317,11 +316,26 @@ def grid_search_forest(df):
     plt.colorbar(contour_plot).set_label("Brier Skill Score")
 
     min_test_bs = min(test_bs_dict.values())
+    min_test_model_bs = [key for key, value in test_bs_dict.items() if value == min_test_bs]
     max_test_bss = max(test_bss_dict.values())
+    max_test_model_bss = [key for key, value in test_bss_dict.items() if value == max_test_bss]
     print("Best test bs")
+    print("Num trees: ")
+    print(min_test_model_bs[0][0])
+    print("Max depth: ")
+    print(min_test_model_bs[0][1])
+    print("Best score")
     print(min_test_bs)
+    print("\n")
+
     print("Best test bss")
+    print("Num trees: ")
+    print(max_test_model_bss[0][0])
+    print("Max depth: ")
+    print(max_test_model_bss[0][1])
+    print("Best score")
     print(max_test_bss)
+    print("\n")
 
 def random_split(df, ratio):
     ### Split the dataset into training and validation
