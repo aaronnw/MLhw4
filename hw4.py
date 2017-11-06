@@ -1,5 +1,6 @@
 import pandas as pd
 import random
+import math
 from sklearn.preprocessing import Imputer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -8,6 +9,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import brier_score_loss
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 datafile = "hw4data.csv"
 
@@ -18,9 +20,6 @@ x_col = ["lapse_rate_0to3km_k_m01", "wind_mean_0to6km_magnitude_m_s01", "lapse_r
          "low_level_shear_stdev_s01", "wind_mean_0to6km_cosine", "enhanced_stretching_potential",
          "microburst_composite_param", "cape_0to6km_j_kg01", "theta_e_difference_kelvins", "derecho_composite_param",
          "lifted_index_surface_to_500mb_kelvins", "wind_shear_0to8km_magnitude_m_s01", "vil_gradient_percentile25_mm"]
-
-y_col = 'severe_wind'
-
 
 train_validate_size = 10000
 testing_size = 2000
@@ -49,6 +48,7 @@ def split_input_data(df):
 
 
 def decision_tree(df):
+    y_col = 'severe_wind'
     tv_set, test_set = split_input_data(df)
     training_set, validation_set = random_split(tv_set, .75)
     d_tree = DecisionTreeClassifier(criterion="entropy")
@@ -85,6 +85,7 @@ def decision_tree(df):
 
 
 def random_forest(df):
+    y_col = 'severe_wind'
     tv_set, test_set = split_input_data(df)
     training_set, validation_set = random_split(tv_set, .75)
     forest = RandomForestClassifier(criterion="entropy", n_estimators=500)
@@ -120,6 +121,7 @@ def random_forest(df):
 
 
 def gradient_boosted_trees(df):
+    y_col = 'severe_wind'
     tv_set, test_set = split_input_data(df)
     training_set, validation_set = random_split(tv_set, .75)
     gradient_trees = GradientBoostingClassifier(n_estimators=500, loss="exponential")
@@ -152,6 +154,92 @@ def gradient_boosted_trees(df):
     test_bss = calc_BSS(y_true, y_pred, freq_pos)
     print(test_bss)
 
+
+def regression_tree(df):
+    y_col = 'max_wind_speed_m_s01'
+    tv_set, test_set = split_input_data(df)
+    training_set, validation_set = random_split(tv_set, .75)
+    dec_tree_reg = DecisionTreeRegressor()
+    fitted_regressor = dec_tree_reg.fit(training_set[x_col], training_set[y_col])
+
+    y_true = validation_set[y_col]
+    y_pred = fitted_regressor.predict(validation_set[x_col])
+
+    print("Regression tree")
+    print("Validation MAE")
+    valid_mae = mean_absolute_error(y_true, y_pred)
+    print(valid_mae)
+    print("Validation RMSE")
+    valid_rmse = math.sqrt(mean_squared_error(y_true, y_pred))
+    print(valid_rmse)
+
+    y_true = test_set[y_col]
+    y_pred = fitted_regressor.predict(test_set[x_col])
+    print("Test MAE")
+    valid_mae = mean_absolute_error(y_true, y_pred)
+    print(valid_mae)
+    print("Test RMSE")
+    valid_rmse = math.sqrt(mean_squared_error(y_true, y_pred))
+    print(valid_rmse)
+    print("\n")
+
+
+def regression_forest(df):
+    y_col = 'max_wind_speed_m_s01'
+    tv_set, test_set = split_input_data(df)
+    training_set, validation_set = random_split(tv_set, .75)
+    dec_tree_reg = RandomForestRegressor(n_estimators=500)
+    fitted_regressor = dec_tree_reg.fit(training_set[x_col], training_set[y_col])
+
+    y_true = validation_set[y_col]
+    y_pred = fitted_regressor.predict(validation_set[x_col])
+    print("Regression Forest")
+    print("Validation MAE")
+    valid_mae = mean_absolute_error(y_true, y_pred)
+    print(valid_mae)
+    print("Validation RMSE")
+    valid_rmse = math.sqrt(mean_squared_error(y_true, y_pred))
+    print(valid_rmse)
+
+    y_true = test_set[y_col]
+    y_pred = fitted_regressor.predict(test_set[x_col])
+    print("Test MAE")
+    valid_mae = mean_absolute_error(y_true, y_pred)
+    print(valid_mae)
+    print("Test RMSE")
+    valid_rmse = math.sqrt(mean_squared_error(y_true, y_pred))
+    print(valid_rmse)
+    print("\n")
+
+
+def gb_regressor(df):
+    y_col = 'max_wind_speed_m_s01'
+    tv_set, test_set = split_input_data(df)
+    training_set, validation_set = random_split(tv_set, .75)
+    dec_tree_reg = GradientBoostingRegressor(n_estimators=500)
+    fitted_regressor = dec_tree_reg.fit(training_set[x_col], training_set[y_col])
+
+    y_true = validation_set[y_col]
+    y_pred = fitted_regressor.predict(validation_set[x_col])
+    print("Regression Forest")
+    print("Validation MAE")
+    valid_mae = mean_absolute_error(y_true, y_pred)
+    print(valid_mae)
+    print("Validation RMSE")
+    valid_rmse = math.sqrt(mean_squared_error(y_true, y_pred))
+    print(valid_rmse)
+
+    y_true = test_set[y_col]
+    y_pred = fitted_regressor.predict(test_set[x_col])
+    print("Test MAE")
+    valid_mae = mean_absolute_error(y_true, y_pred)
+    print(valid_mae)
+    print("Test RMSE")
+    valid_rmse = math.sqrt(mean_squared_error(y_true, y_pred))
+    print(valid_rmse)
+    print("\n")
+
+
 def random_split(df, ratio):
     ### Split the dataset into training and validation
     # Number of elements in the 1st set
@@ -177,7 +265,11 @@ def calc_BSS(y_true, y_pred, freq_pos):
 
 if __name__ == "__main__":
     df = load_data()
-    decision_tree(df)
-    random_forest(df)
-    gradient_boosted_trees(df)
+    # decision_tree(df)
+    # random_forest(df)
+    # gradient_boosted_trees(df)
+    #regression_tree(df)
+    #regression_forest(df)
+    #gb_regressor(df)
+
 
