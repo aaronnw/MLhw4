@@ -1,6 +1,10 @@
 import pandas as pd
+import numpy as np
 import random
 import math
+import itertools
+import matplotlib.pyplot as plt
+
 from sklearn.preprocessing import Imputer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -24,6 +28,9 @@ x_col = ["lapse_rate_0to3km_k_m01", "wind_mean_0to6km_magnitude_m_s01", "lapse_r
 train_validate_size = 10000
 testing_size = 2000
 m_s_severe = 25.7222
+
+num_trees_list = [1, 5, 10, 50, 100]
+max_depth_list = [1, 5, 10, 20, 50]
 
 def load_data():
     df = pd.read_csv(datafile, header=0)
@@ -239,6 +246,75 @@ def gb_regressor(df):
     print(valid_rmse)
     print("\n")
 
+def grid_search_forest(df):
+    global num_trees_list, max_depth_list
+    y_col = 'severe_wind'
+    tv_set, test_set = split_input_data(df)
+    models = list(itertools.product(num_trees_list, max_depth_list))
+    valid_bs_dict = {}
+    valid_bss_dict = {}
+    test_bs_dict = {}
+    test_bss_dict = {}
+    for m in models:
+        num_trees = m[0]
+        max_depth = m[1]
+        for i in range(30):
+            print(m)
+            training_set, validation_set = random_split(tv_set, .75)
+            forest = RandomForestClassifier(criterion="entropy", n_estimators=num_trees)
+            forest.fit(training_set[x_col], training_set[y_col])
+            counts = training_set[y_col].value_counts().to_dict()
+            freq_pos = counts[1] / (counts[0] + counts[1])
+
+            # Validation stuff
+            y_true = validation_set[y_col]
+            y_pred = forest.predict_proba(validation_set[x_col])[:, 1]
+            # Validation BS
+            valid_bs = brier_score_loss(y_true, y_pred)
+            # Validation BSS
+            valid_bss = calc_BSS(y_true, y_pred, freq_pos)
+            # Test stuff
+            y_true = test_set[y_col]
+            y_pred = forest.predict_proba(test_set[x_col])[:, 1]
+            # Test BS
+            test_bs = brier_score_loss(y_true, y_pred)
+            # Test BSS
+            test_bss = calc_BSS(y_true, y_pred, freq_pos)
+
+            valid_bs_dict.setdefault(m, []).append(valid_bs)
+            valid_bss_dict.setdefault(m, []).append(valid_bss)
+            test_bs_dict.setdefault(m, []).append(test_bs)
+            test_bss_dict.setdefault(m, []).append(test_bss)
+
+    for key in valid_bs_dict:
+        valid_bs_dict[key] = np.mean(valid_bs_dict[key])
+    for key in valid_bss_dict:
+        valid_bss_dict[key] = np.mean(valid_bss_dict[key])
+    for key in test_bs_dict:
+        test_bs_dict[key] = np.mean(test_bs_dict[key])
+    for key in test_bss_dict:
+        test_bss_dict[key] = np.mean(test_bss_dict[key])
+
+    valid_bs_list = np.array(list(valid_bs_dict.values()))
+    z = valid_bs_list.reshape((len(num_trees_list), len(max_depth_list)))
+    plt.figure()
+    contour_plot = plt.contourf(max_depth_list, num_trees_list, z, extend="both")
+    plt.clabel(contour_plot, inline=True, fontsize=10)
+    plt.title("Brier Score for Classification Forest")
+    plt.xlabel("Max depth")
+    plt.ylabel("Num trees")
+    plt.colorbar(contour_plot).set_label("Brier Score")
+
+    valid_bss_list = np.array(list(valid_bss_dict.values()))
+    z = valid_bss_list.reshape((len(num_trees_list), len(max_depth_list)))
+    plt.figure()
+    contour_plot = plt.contourf(max_depth_list, num_trees_list, z, extend="both")
+    plt.clabel(contour_plot, inline=True, fontsize=10)
+    plt.title("Brier Skill Score for Classification Forest")
+    plt.xlabel("Max depth")
+    plt.ylabel("Num trees")
+    plt.colorbar(contour_plot).set_label("Brier Skill Score")
+
 
 def random_split(df, ratio):
     ### Split the dataset into training and validation
@@ -272,4 +348,7 @@ if __name__ == "__main__":
     #regression_forest(df)
     #gb_regressor(df)
 
+    # Part 5 using Random forest for regression
+    grid_search_forest(df)
+    plt.show()
 
