@@ -1,11 +1,23 @@
 import pandas as pd
 import random
 from sklearn.preprocessing import Imputer
+from sklearn.tree import DecisionTreeClassifier
 
 datafile = "hw4data.csv"
+
+x_col = ["lapse_rate_0to3km_k_m01", "wind_mean_0to6km_magnitude_m_s01", "lapse_rate_850to500mb_k_m01",
+         "srw_0to1km_magnitude_m_s01", "echo_top_50dbz_mean_metres", "wind_mean_ebl_cosine",
+         "reflectivity_m10celsius_max_dbz", "reflectivity_lowest_altitude_prctile25gradient_dbz_m01",
+         "lapse_rate_700to500mb_k_m01", "reflectivity_lowest_altitude_percentile95_dbz",
+         "low_level_shear_stdev_s01", "wind_mean_0to6km_cosine", "enhanced_stretching_potential",
+         "microburst_composite_param", "cape_0to6km_j_kg01", "theta_e_difference_kelvins", "derecho_composite_param",
+         "lifted_index_surface_to_500mb_kelvins", "wind_shear_0to8km_magnitude_m_s01", "vil_gradient_percentile25_mm"]
+
+y_col = 'severe_wind'
+
+
 train_validate_size = 10000
 testing_size = 2000
-
 m_s_severe = 25.7222
 
 def load_data():
@@ -30,6 +42,19 @@ def split_input_data(df):
 
 def decision_tree(tv_set, test_set):
     training_set, validation_set = random_split(tv_set, .75)
+    d_tree = DecisionTreeClassifier()
+    fitted_tree = d_tree.fit(training_set[x_col], training_set[y_col])
+
+    #Validation BS
+    print("Validation BS")
+    print(len(validation_set[x_col]))
+    y_probs = fitted_tree.predict_proba(validation_set[x_col])
+    print(y_probs)
+    #Validation BSS
+
+    #Test BS
+    #Test BSS
+
     print(training_set.shape)
     print(validation_set.shape)
 
